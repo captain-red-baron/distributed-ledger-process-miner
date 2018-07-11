@@ -59,6 +59,35 @@ def compute_transitions(event_log: pd.DataFrame, save_intermediate=True, save_pr
     return full_frame, transition_agg
 
 
+def compute_dependency_confidence(aggregated_transitions: pd.Series) -> pd.Series:
+    """
+    Computes the confidence of relationships between to transaction types:
+    0 -> no relation ship,
+    +-1 -> strong relationship
+    :param aggregated_transitions: a pd.Series, according to the outcome of 'compute_transitions'
+    :returns confidence_series: a pd.Series illustration how strong the dependency in process terms from two transaction
+    types towards each other is.
+    """
+    confidence_series = pd.Series()
+    for key in aggregated_transitions.keys():
+        act_a, act_b = key.split('->')
+        try:
+            awb = aggregated_transitions['{}->{}'.format(act_a, act_b)]
+        except KeyError as e:
+            awb = 0
+
+        try:
+            bwa = aggregated_transitions['{}->{}'.format(act_b, act_a)]
+        except KeyError as e:
+            bwa = 0
+
+        if awb == bwa:
+            confidence_series[key] = 1
+        else:
+            confidence_series[key] = (awb - bwa) / (awb + bwa)
+    return confidence_series
+
+
 def get_curr_trans(prev_id, prev_type, curr_id, curr_type) -> str:
     """
     Evaluate the current transition based on the information from the current and the previous transaction
