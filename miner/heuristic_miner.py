@@ -1,11 +1,8 @@
-import os
-
 import pandas as pd
 import numpy as np
-import logging
 
 
-def compute_transitions(event_log: pd.DataFrame, save_intermediate=True, save_prefix="hm", save_name="name") -> (pd.DataFrame, pd.Series):
+def compute_transitions(event_log: pd.DataFrame) -> (pd.DataFrame, pd.Series):
     """
     Takes an event log and computes the transition matrix and its aggregation. The transition matrix shows in a
     ordered fashion the transition from on transaction type to another coded as a category string value.
@@ -41,20 +38,15 @@ def compute_transitions(event_log: pd.DataFrame, save_intermediate=True, save_pr
     full_frame = pd.concat([event_log, empty_frame])
     full_frame = full_frame.sort_index()
     full_frame['next_shifted'] = full_frame['next_transition'].shift(1)
+    full_frame = full_frame.dropna(how='all')
     full_frame['transition'] = full_frame.apply(lambda x: merge_transition(x['curr_transition'], x['next_shifted']),
                                                 axis=1)
-    full_frame = full_frame[['total_pos', 'timestamp', 'transition']]
     full_frame = full_frame.fillna(method='ffill')
-
-    if save_intermediate:
-        filename = '{}_{}_transition_log.csv'.format(save_prefix, save_name)
-        full_frame.to_csv(filename)
+    full_frame['total_pos'] = full_frame['total_pos'].astype(np.int64)
+    full_frame['timestamp'] = full_frame['timestamp'].astype(np.int64)
+    full_frame = full_frame[['total_pos', 'timestamp', 'transition']]
 
     transition_agg = full_frame.groupby('transition')['transition'].count()
-
-    if save_intermediate:
-        filename = '{}_{}_transition_frequencies.csv'.format(save_prefix, save_name)
-        transition_agg.to_csv(filename)
 
     return full_frame, transition_agg
 
