@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import logging
 
 
 def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFrame, block_times: pd.DataFrame,
@@ -65,12 +64,26 @@ def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFra
     events = events.drop('transactionHash', axis=1)
     events = events.drop('blockNumber', axis=1)
 
+    events['senderIsContract'] = events['senderIsContract'].fillna(False)
+    events['senderIsERC20'] = events['senderIsERC20'].fillna(False)
+    events['receiverIsContract'] = events['receiverIsContract'].fillna(False)
+    events['receiverIsERC20'] = events['receiverIsERC20'].fillna(False)
+
+    events['sender_id'] = events['sender_id'].fillna(-1)
+    events['sender_id'] = events['sender_id'].astype(np.int64)
+    events['receiver_id'] = events['receiver_id'].fillna(-1)
+    events['receiver_id'] = events['receiver_id'].astype(np.int64)
+
     # get rid of contract creation transactions
     events = events[events['type'] == 'call']
     events = events.drop('type', axis=1)
     events['sender_type'] = events['senderIsContract'].apply(lambda x: check_user_type(x))
     events['receiver_type'] = events['receiverIsContract'].apply(lambda x: check_user_type(x))
     events['transaction_type'] = events['sender_type'].map(str) + 't' + events['receiver_type'].map(str)
+
+    events['transaction_type'] = events['transaction_type'].astype('category')
+    events['receiver_type'] = events['receiver_type'].astype('category')
+    events['sender_type'] = events['receiver_type'].astype('category')
 
     return addresses_lookup, transaction_hashes, events
 
