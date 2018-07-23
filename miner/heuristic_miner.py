@@ -47,6 +47,8 @@ def compute_transitions(event_log: pd.DataFrame) -> (pd.DataFrame, pd.Series):
     full_frame = full_frame[['total_pos', 'timestamp', 'transition']]
 
     transition_agg = full_frame.groupby('transition')['transition'].count()
+    transition_agg = transition_agg.fillna(0)
+    transition_agg = transition_agg.astype(np.int64)
 
     return full_frame, transition_agg
 
