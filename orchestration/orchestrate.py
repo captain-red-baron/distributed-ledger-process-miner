@@ -40,7 +40,17 @@ def check_data_fame_conformance(df, pattern):
         return False
 
 
-def mine_segment_by_day(parsed_events, name, suffix):
+def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFrame):
+    """
+    Utility function to mine a DataFrame of parsed events aggregated by day.
+    :param parsed_events: the input Data from the parser module.
+    :param name: a unique name for the origin of the mined day (e.g. "trasactions5000000-5100000")
+    :param suffix: a suffix to get added to any file name.
+    :return: two data frames. One for the global dependencies, one for the confidences. Columns: 'day', 'CtC->CtC',
+    'CtC->CtU', 'CtC->UtU', 'CtC->end', 'CtU->CtC', 'CtU->CtU','CtU->UtC', 'CtU->UtU', 'CtU->end', 'UtC->CtC',
+    'UtC->CtU', 'UtC->UtC', 'UtC->UtU', 'UtC->end', 'UtU->CtC', 'UtU->CtU', 'UtU->UtC', 'UtU->UtU', 'UtU->end',
+    'sta->CtC', 'sta->UtC', 'sta->UtU'
+    """
     global_dependencies_l = pd.DataFrame(columns=['day', 'CtC->CtC', 'CtC->CtU', 'CtC->UtU', 'CtC->end', 'CtU->CtC', 'CtU->CtU',
        'CtU->UtC', 'CtU->UtU', 'CtU->end', 'UtC->CtC', 'UtC->CtU', 'UtC->UtC',
        'UtC->UtU', 'UtC->end', 'UtU->CtC', 'UtU->CtU', 'UtU->UtC', 'UtU->UtU',
