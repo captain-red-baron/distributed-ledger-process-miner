@@ -29,7 +29,7 @@ def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFra
 
     # Get the contract lookup and set is Contract flag
     contracts_lookup['isContract'] = True
-    contracts_lookup['address_hex'] = contracts_lookup['result.address'].apply(lambda x: hex(int(x)))
+    contracts_lookup['address_hex'] = contracts_lookup['result.address']
     contracts_lookup = contracts_lookup[['address_hex', 'isContract', 'isERC20']]
     addresses_lookup = pd.merge(addresses_df, contracts_lookup, left_on='address_hex',
                                 right_on='address_hex', how='outer')
