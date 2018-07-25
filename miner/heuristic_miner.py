@@ -36,7 +36,7 @@ def compute_transitions(event_log: pd.DataFrame) -> (pd.DataFrame, pd.Series):
     empty_frame.index = empty_frame.index * 2 - 1
     empty_frame = empty_frame.drop(empty_frame.index[0])
     full_frame = pd.concat([event_log, empty_frame])
-    full_frame = full_frame.sort_index()
+    full_frame = full_frame.sort_index(kind='mergesort')
     full_frame['next_shifted'] = full_frame['next_transition'].shift(1)
     full_frame = full_frame.dropna(how='all')
     full_frame['transition'] = full_frame.apply(lambda x: merge_transition(x['curr_transition'], x['next_shifted']),

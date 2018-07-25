@@ -19,7 +19,6 @@ pd.options.mode.chained_assignment = None
 path_to_raw_transaction_bulk = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_data'
 path_contracts_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
 path_block_times = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/blockTimes.csv'
-output_path_prefix = 'out'
 extension = 'csv'
 
 # Constants
