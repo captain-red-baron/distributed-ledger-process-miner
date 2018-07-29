@@ -1,0 +1,53 @@
+---
+title: "Time Series Analysis - Micro Perspective"
+output: html_notebook
+---
+
+```{r}
+install.packages("ggplot2")
+library(ggplot2)
+library(reshape2)
+options(scipen = 999)
+```
+
+
+```{r}
+aggregated_data <- read.csv(file="../../parity_data/rgd_1523059200_to_1524528000.csv", header=TRUE, sep=",")
+
+aggregated_data$day <- aggregated_data$day / 1000000000
+aggregated_data$day <- as.POSIXct(aggregated_data$day, origin="1970-01-01")
+
+aggregated_data$total_events <- 0
+aggregated_data$total_events <- rowSums(aggregated_data[, 2:24])
+```
+
+# See the overall amount of events
+First we want to analyze how many cases took place. Note that this bar plot includes the start and end events for every case.
+
+```{r}
+ggplot(aggregated_data, aes(x=day, y=total_events)) +
+    geom_bar(stat='identity')
+```
+
+This is with absolute values
+
+```{r}
+aggregated_data.m <- melt(aggregated_data[, 1:24], id.vars = "day")
+ggplot(aggregated_data.m, aes(x = day, y = value, fill=variable)) +
+    geom_bar(stat='identity')
+```
+This is with relative values
+
+```{r}
+aggregated_data_relative <- cbind(aggregated_data)
+aggregated_data_relative[, 2:24] = aggregated_data[, 2:24] /  aggregated_data[, 'total_events']
+aggregated_data_relative.m <- melt(aggregated_data_relative[, 1:24], id.vars = "day")
+p <- ggplot(aggregated_data_relative.m, aes(x = day, y = value, fill=variable)) +
+    geom_bar(stat='identity')
+p
+```
+
+```{r}
+summary(aggregated_data_relative)
+```
+
