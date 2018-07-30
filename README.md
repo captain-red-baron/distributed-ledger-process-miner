@@ -10,3 +10,6 @@
 
 ## Install requirements
 * `pip install requirements.txt`
+
+## Export project python path
+`export PYTHONPATH=[...]/distributed_ledger_process_miner`

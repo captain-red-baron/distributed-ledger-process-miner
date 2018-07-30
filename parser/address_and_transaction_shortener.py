@@ -1,4 +1,3 @@
-import os
 import ntpath
 import glob
 import time
@@ -10,7 +9,7 @@ from config.constants import RAW_TRANSACTION_COLUMN_NAMES, \
     BLOCK_TIMES_COLUMN_NAMES
 
 import logging
-logging.basicConfig(filename='address_shortner.log',level=logging.DEBUG)
+logging.basicConfig(filename='address_shortner.log', level=logging.DEBUG)
 
 
 def check_data_fame_conformance(df, pattern):
@@ -22,9 +21,16 @@ def check_data_fame_conformance(df, pattern):
 
 pd.options.mode.chained_assignment = None
 
-path_to_raw_transaction_bulk = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_data'
-path_contracts_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
+path_to_raw_transaction_bulk = input("Please paste the path to raw transaction bulk directory (e.g. /Users/mister-x/[...]/parity_data)")
+    #'/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_data'
+path_contracts_lookup = input("Please paste the path to the contracts lookup csv file (e.g. /Users/mister-x/[...]/parity_data/contractsWithERCFlags.csv)")
+    #'/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
 
+address_lookup_filename = input("Please paste Path and name to the addresses lookup output csv file (e.g. /Users/mister-x/[...]/parity_data/address_lookup.csv)")
+
+transaction_lookup_filename = input("Please paste Path and name to the transactions lookup output csv file (e.g. /Users/mister-x/[...]/parity_data/transaction_lookup.csv)")
+
+print("Applying now shortening. Please wait...")
 logging.info('Loading contracts lookup')
 contracts_lookup = pd.read_csv(path_contracts_lookup)
 
