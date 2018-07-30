@@ -50,4 +50,16 @@ p
 ```{r}
 summary(aggregated_data_relative)
 ```
+```{r}
+cleaned_aggregated_data_relative <- subset(aggregated_data_relative, select = -c(CtU..UtC, CtU..UtU, UtC..UtU, UtU..CtC, UtU..CtU, UtU..UtC, UtU..UtU))
+```
+
+Correlation analysis
+
+```{r}
+cormat <- round(cor(cleaned_aggregated_data_relative[, 2:17], method = c("pearson")),2)
+melted_cormat <- melt(cormat)
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
 

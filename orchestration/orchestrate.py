@@ -5,7 +5,11 @@ import time
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+
+# Constants
+from config.constants import RAW_TRANSACTION_COLUMN_NAMES, \
+    CONTRACT_LOOKUP_COLUMN_NAMES, \
+    BLOCK_TIMES_COLUMN_NAMES
 
 from parser import event_log_parser as parser
 from miner import heuristic_miner as miner
@@ -19,17 +23,8 @@ pd.options.mode.chained_assignment = None
 path_to_raw_transaction_bulk = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_data'
 path_contracts_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
 path_block_times = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/blockTimes.csv'
-extension = 'csv'
 
-# Constants
-raw_transaction_columns = {'action.address', 'action.balance', 'action.callType', 'action.from',
-       'action.gas', 'action.init', 'action.input', 'action.refundAddress',
-       'action.to', 'action.value', 'blockHash', 'blockNumber', 'error',
-       'result', 'result.address', 'result.code', 'result.gasUsed',
-       'result.output', 'subtraces', 'traceAddress', 'transactionHash',
-       'transactionPosition', 'type'}
-contracts_lookup_columns = {'result.address', 'isERC20'}
-block_times_columns = {'number', 'timestamp'}
+extension = 'csv'
 
 
 def check_data_fame_conformance(df, pattern):
@@ -80,11 +75,11 @@ def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFr
 contracts_lookup = pd.read_csv(path_contracts_lookup)
 block_times = pd.read_csv(path_block_times)
 
-if not check_data_fame_conformance(contracts_lookup, contracts_lookup_columns):
-    raise SyntaxError('The column names of the contracts lookup csv file do no match the required colum names: {}'.format(contracts_lookup_columns))
+if not check_data_fame_conformance(contracts_lookup, CONTRACT_LOOKUP_COLUMN_NAMES):
+    raise SyntaxError('The column names of the contracts lookup csv file do no match the required colum names: {}'.format(CONTRACT_LOOKUP_COLUMN_NAMES))
 
-if not check_data_fame_conformance(block_times, block_times_columns):
-    raise SyntaxError('The column names of the block times lookup csv file do no match the required colum names: {}'.format(block_times_columns))
+if not check_data_fame_conformance(block_times, BLOCK_TIMES_COLUMN_NAMES):
+    raise SyntaxError('The column names of the block times lookup csv file do no match the required colum names: {}'.format(BLOCK_TIMES_COLUMN_NAMES))
 
 os.chdir(path_to_raw_transaction_bulk)
 
@@ -104,7 +99,7 @@ for candidate_path in raw_transaction_candidates:
     path_head, path_tail = ntpath.split(candidate_path)
     file_infix = path_tail[:-4]
     raw_transactions = pd.read_csv(candidate_path)
-    if not check_data_fame_conformance(raw_transactions, raw_transaction_columns):
+    if not check_data_fame_conformance(raw_transactions, RAW_TRANSACTION_COLUMN_NAMES):
         logging.info('File {} not matching the raw transaction pattern. Skipping now'.format(candidate_path))
         print('File {} not matching the raw transaction pattern. Skipping now'.format(candidate_path))
     else:
