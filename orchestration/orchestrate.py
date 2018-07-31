@@ -101,7 +101,7 @@ global_confidences = pd.DataFrame(columns=['day', 'CtC->CtC', 'CtC->CtU', 'CtC->
        'UtC->UtU', 'UtC->end', 'UtU->CtC', 'UtU->CtU', 'UtU->UtC', 'UtU->UtU',
        'UtU->end', 'sta->CtC', 'sta->UtC', 'sta->UtU'])
 
-global_trace_lengths_columns = [i for i in range(0, 10000)]
+global_trace_lengths_columns = ['day'] + [i for i in range(0, 10000)]
 global_trace_lengths = pd.DataFrame(columns=global_trace_lengths_columns)
 
 raw_transaction_candidates = [i for i in glob.glob('*.{}'.format(extension))]
@@ -129,7 +129,8 @@ for candidate_path in raw_transaction_candidates:
 
         global_trace_lengths = global_trace_lengths.append(trace_lengths)
         global_trace_lengths = global_trace_lengths.fillna(0)
-        reduced_global_trace_lengths = global_trace_lengths_columns.groupby('day').sum()
+        global_trace_lengths['day'] = global_trace_lengths.index
+        reduced_global_trace_lengths = global_trace_lengths.groupby('day').sum()
 
         parsing_end = time.time()
 
