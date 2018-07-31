@@ -6,3 +6,5 @@ RAW_TRANSACTION_COLUMN_NAMES = {'action.address', 'action.balance', 'action.call
        'transactionPosition', 'type'}
 CONTRACT_LOOKUP_COLUMN_NAMES = {'result.address', 'isERC20'}
 BLOCK_TIMES_COLUMN_NAMES = {'number', 'timestamp'}
+TRANSACTION_LOOKUP_COLUMN_NAMES = {'transaction_hash', 'id'}
+ADDRESSES_LOOKUP_COLUMN_NAMES = {'address_hex', 'isContract', 'isERC20', 'id'}

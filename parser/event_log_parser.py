@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 
 
-def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFrame, block_times: pd.DataFrame,
-                    block_padding=1000000000)->(pd.DataFrame, pd.DataFrame, pd.DataFrame):
+def parse_event_log(raw_transactions: pd.DataFrame, transaction_lookup: pd.DataFrame, addresses_lookup: pd.DataFrame, block_times: pd.DataFrame,
+                    block_padding=1000000000)->(pd.DataFrame, pd.DataFrame):
     """
     Parses an event log from a raw transactions dataFrame.
     :param raw_transactions: the raw transactions to parse from. Should include at least the following columns:
@@ -15,31 +15,11 @@ def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFra
     transaction log will have an unique id, ascending in time. The outcome is call 'total_pos' and is computed as
     current_block_number * block_padding + line number. Hence the block_padding kwarg should be selected as
     min(10^x: 10^x >len(raw_transactions)). Per default 100M.
-    :return: addresses_lookup, transaction_hashes, events
+    :return: events, trace complexities (by days)
     """
-    from_addresses = raw_transactions['action.from'].unique()
-    from_addresses = set(address for address in from_addresses)
-    to_addresses = raw_transactions['action.to'].unique()
-    to_addresses = set(address for address in to_addresses)
-
-    addresses = from_addresses.union(to_addresses)
-    addresses_df = pd.DataFrame(list(addresses))
-    addresses_df.columns = ['address_hex']
-    addresses_df = addresses_df.dropna()
-
-    # Get the contract lookup and set is Contract flag
-    contracts_lookup['isContract'] = True
-    contracts_lookup['address_hex'] = contracts_lookup['result.address']
-    contracts_lookup = contracts_lookup[['address_hex', 'isContract', 'isERC20']]
-    addresses_lookup = pd.merge(addresses_df, contracts_lookup, left_on='address_hex',
-                                right_on='address_hex', how='outer')
-    addresses_lookup['id'] = addresses_lookup.index
     addresses_lookup.set_index('address_hex')
 
-    transaction_hashes = pd.DataFrame(list(raw_transactions['transactionHash'].unique()))
-    transaction_hashes['id'] = transaction_hashes.index
-    transaction_hashes.columns = ['transaction_hash', 'id']
-    transaction_hashes.set_index('transaction_hash')
+    transaction_lookup.set_index('transaction_hash')
 
     # Events
     raw_transactions['id'] = raw_transactions['blockNumber'] * block_padding + raw_transactions.index
@@ -49,7 +29,7 @@ def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFra
     events = raw_transactions.merge(addresses_lookup, left_on='action.from', right_on='address_hex', how='left') \
         .merge(addresses_lookup, left_on='action.to', right_on='address_hex', how='left') \
         .merge(block_times, left_on='blockNumber', right_on='number', how='inner') \
-        .merge(transaction_hashes, left_on='transactionHash', right_on='transaction_hash', how='inner')
+        .merge(transaction_lookup, left_on='transactionHash', right_on='transaction_hash', how='inner')
 
     events.columns = ['total_pos', 'action.from', 'action.input', 'action.to', 'blockNumber', 'transactionHash',
                       'type', 'sender_address', 'senderIsContract', 'senderIsERC20', 'sender_id',
@@ -85,7 +65,20 @@ def parse_event_log(raw_transactions: pd.DataFrame, contracts_lookup: pd.DataFra
     events['receiver_type'] = events['receiver_type'].astype('category')
     events['sender_type'] = events['receiver_type'].astype('category')
 
-    return addresses_lookup, transaction_hashes, events
+    # traces by day
+    traces_by_day = pd.DataFrame()
+    events['day'] = pd.to_datetime(events['timestamp'], unit='s').dt.normalize()
+    groups = events.groupby('day')
+    for day, group in groups:
+        trace_lengths = group.groupby('transaction_id').count().groupby('total_pos').count()['action.input']
+        trace_lengths['day'] = day
+        traces_by_day = traces_by_day.append(trace_lengths, ignore_index=True)
+    traces_by_day = traces_by_day.set_index('day')
+    traces_by_day = traces_by_day.fillna(0)
+    traces_by_day = traces_by_day.astype(np.int64)
+    events = events.drop('day', axis=1)
+
+    return events, traces_by_day
 
 
 def check_user_type(is_contract: bool) -> str:

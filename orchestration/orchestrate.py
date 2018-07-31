@@ -7,21 +7,22 @@ import pandas as pd
 import numpy as np
 
 # Constants
-from config.constants import RAW_TRANSACTION_COLUMN_NAMES, \
-    CONTRACT_LOOKUP_COLUMN_NAMES, \
-    BLOCK_TIMES_COLUMN_NAMES
+from config.constants import RAW_TRANSACTION_COLUMN_NAMES, CONTRACT_LOOKUP_COLUMN_NAMES, \
+    BLOCK_TIMES_COLUMN_NAMES, ADDRESSES_LOOKUP_COLUMN_NAMES, TRANSACTION_LOOKUP_COLUMN_NAMES
 
 from parser import event_log_parser as parser
 from miner import heuristic_miner as miner
 
 import logging
-logging.basicConfig(filename='process_miner_orchestration.log',level=logging.DEBUG)
+logging.basicConfig(filename='process_miner_orchestration.log', level=logging.DEBUG)
 
 pd.options.mode.chained_assignment = None
 
 #Paths
-path_to_raw_transaction_bulk = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_data'
-path_contracts_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
+path_to_raw_transaction_bulk = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_transactions'
+#path_contracts_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
+path_transaction_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/transaction_lookup.csv'
+path_address_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/address_lookup.csv'
 path_block_times = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/blockTimes.csv'
 
 extension = 'csv'
@@ -72,11 +73,19 @@ def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFr
 
 
 # Data Frames
-contracts_lookup = pd.read_csv(path_contracts_lookup)
+#contracts_lookup = pd.read_csv(path_contracts_lookup)
+
+logging.info('Loading provided input files')
+print('Loading provided input files')
+transaction_lookup = pd.read_csv(path_transaction_lookup)
+addresses_lookup = pd.read_csv(path_address_lookup)
 block_times = pd.read_csv(path_block_times)
 
-if not check_data_fame_conformance(contracts_lookup, CONTRACT_LOOKUP_COLUMN_NAMES):
-    raise SyntaxError('The column names of the contracts lookup csv file do no match the required colum names: {}'.format(CONTRACT_LOOKUP_COLUMN_NAMES))
+if not check_data_fame_conformance(transaction_lookup, TRANSACTION_LOOKUP_COLUMN_NAMES):
+    raise SyntaxError('The column names of the transaction lookup csv file do no match the required column names: {}'.format(TRANSACTION_LOOKUP_COLUMN_NAMES))
+
+if not check_data_fame_conformance(addresses_lookup, ADDRESSES_LOOKUP_COLUMN_NAMES):
+    raise SyntaxError('The column names of the addresses lookup csv file do no match the required column names: {}'.format(ADDRESSES_LOOKUP_COLUMN_NAMES))
 
 if not check_data_fame_conformance(block_times, BLOCK_TIMES_COLUMN_NAMES):
     raise SyntaxError('The column names of the block times lookup csv file do no match the required colum names: {}'.format(BLOCK_TIMES_COLUMN_NAMES))
@@ -91,6 +100,9 @@ global_confidences = pd.DataFrame(columns=['day', 'CtC->CtC', 'CtC->CtU', 'CtC->
        'CtU->UtC', 'CtU->UtU', 'CtU->end', 'UtC->CtC', 'UtC->CtU', 'UtC->UtC',
        'UtC->UtU', 'UtC->end', 'UtU->CtC', 'UtU->CtU', 'UtU->UtC', 'UtU->UtU',
        'UtU->end', 'sta->CtC', 'sta->UtC', 'sta->UtU'])
+
+global_trace_lengths_columns = [i for i in range(0, 10000)]
+global_trace_lengths = pd.DataFrame(columns=global_trace_lengths_columns)
 
 raw_transaction_candidates = [i for i in glob.glob('*.{}'.format(extension))]
 j = 0
@@ -110,11 +122,14 @@ for candidate_path in raw_transaction_candidates:
 
         parsing_start = time.time()
 
-        addresses_lookup, transaction_hashes, events = parser.parse_event_log(raw_transactions, contracts_lookup,
-                                                                              block_times)
-        addresses_lookup.to_csv('ps_{}_address_lookup.csv'.format(file_infix))
-        transaction_hashes.to_csv('ps_{}_transaction_lookup.csv'.format(file_infix))
+        events, trace_lengths = parser.parse_event_log(raw_transactions, transaction_lookup, addresses_lookup, block_times)
+        trace_lengths = trace_lengths.reindex_axis(sorted(trace_lengths.columns), axis=1)
+        trace_lengths.to_csv('ps_{}_trace_lengths.csv'.format(file_infix))
         events.to_csv('ps_{}_event_log.csv'.format(file_infix))
+
+        global_trace_lengths = global_trace_lengths.append(trace_lengths)
+        global_trace_lengths = global_trace_lengths.fillna(0)
+        reduced_global_trace_lengths = global_trace_lengths_columns.groupby('day').sum()
 
         parsing_end = time.time()
 
@@ -140,5 +155,8 @@ for candidate_path in raw_transaction_candidates:
         max_day = reduced_global_dependencies.index.max()
         rgd_filename = 'rgd_{}_to_{}.csv'.format(str(min_day)[0:10], str(max_day)[0:10])
         reduced_global_dependencies.to_csv(rgd_filename)
+
+        rgtl_filename = 'rgtl_{}_to_{}.csv'.format(str(min_day)[0:10], str(max_day)[0:10])
+        reduced_global_trace_lengths.to_csv(rgtl_filename)
         j += 1
 

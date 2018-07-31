@@ -91,8 +91,8 @@ transaction_hashes.set_index('transaction_hash')
 
 logging.info('{} - Saving now global lookup tables to {} and {}'.format(datetime.datetime.now(), address_lookup_filename, transaction_lookup_filename))
 print('{} - Saving now global lookup tables to {} and {}'.format(datetime.datetime.now(), address_lookup_filename, transaction_lookup_filename))
-addresses_lookup.to_csv(address_lookup_filename)
-transaction_hashes.to_csv(transaction_lookup_filename)
+addresses_lookup.to_csv(address_lookup_filename, index=False)
+transaction_hashes.to_csv(transaction_lookup_filename, index=False)
 logging.info('{} - Saved global lookup tables'.format(datetime.datetime.now()))
 print('{} - Saved global lookup tables'.format(datetime.datetime.now()))
 
