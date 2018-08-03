@@ -13,21 +13,27 @@ options(scipen = 999)
 
 ```{r}
 aggregated_data <- read.csv(file="../../parity_data/rgd_1523059200_to_1524528000.csv", header=TRUE, sep=",")
+aggregated_data <- aggregated_data[3:16, ]
 
 aggregated_data$day <- aggregated_data$day / 1000000000
 aggregated_data$day <- as.POSIXct(aggregated_data$day, origin="1970-01-01")
 
 aggregated_data$total_events <- 0
-aggregated_data$total_events <- rowSums(aggregated_data[, 2:24])
+aggregated_data$total_events <- rowSums(aggregated_data[2:24])
 ```
 
 # See the overall amount of events
 First we want to analyze how many cases took place. Note that this bar plot includes the start and end events for every case.
 
 ```{r}
-ggplot(aggregated_data, aes(x=day, y=total_events)) +
-    geom_bar(stat='identity')
+transition_day <- ggplot(aggregated_data, aes(x=day, y=total_events)) + ylab('amount of transitions') + ggtitle('Occured transitions per day') + theme(plot.title = element_text(hjust = 0.5)) + geom_bar(stat='identity')
+transition_day
 ```
+
+```{r}
+summary(transition_day)
+```
+
 
 This is with absolute values
 

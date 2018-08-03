@@ -12,14 +12,45 @@ options(scipen = 999)
 
 ```{r}
 trace_lengths <- read.csv(file="../../parity_transactions/rgtl_1523059200_to_1524528000.csv", header=TRUE, sep=",")
+trace_lengths <- trace_lengths[3:16, ]
 
 trace_lengths$day <- trace_lengths$day / 1000000000
 trace_lengths$day <- as.POSIXct(trace_lengths$day, origin="1970-01-01")
+names(trace_lengths) = seq(-1, 1000, by=1)
+colnames(trace_lengths)[1] <- "day"
 ```
 
 
 ```{r}
-g <- ggplot() + xlab('trace length') + ylab('occurences')
+g <- ggplot() + xlab('trace length') + ylab('occurences') + scale_y_log10() + scale_x_discrete(breaks=seq(0, 1000, by=100)) + theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank()) 
+alp = 1/nrow(trace_lengths)
+for (row in 1:nrow(trace_lengths)) {
+  trace_lengths_cur.m <- melt(trace_lengths[row, 1:999], id.vars = "day")
+  g <- g + geom_bar(data=trace_lengths_cur.m, stat='identity', mapping=aes(x=variable, y=value), alpha=alp) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+}
+g
+```
+
+```{r}
+g <- ggplot() + xlab('trace length') + ylab('occurences') + scale_y_log10() + theme_minimal()
+alp = 1/nrow(trace_lengths)
+for (row in 1:nrow(trace_lengths)) {
+  trace_lengths_cur.m <- melt(trace_lengths[row, 1:12], id.vars = "day")
+  g <- g + geom_bar(data=trace_lengths_cur.m, stat='identity', mapping=aes(x=variable, y=value), alpha=alp) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+}
+g
+```
+
+```{r}
+g <- ggplot() + xlab('trace length') + ylab('occurences') + scale_y_log10() + scale_x_discrete(breaks=seq(0, 100, by=10)) + theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank()) 
 alp = 1/nrow(trace_lengths)
 for (row in 1:nrow(trace_lengths)) {
   trace_lengths_cur.m <- melt(trace_lengths[row, 1:100], id.vars = "day")
@@ -27,4 +58,3 @@ for (row in 1:nrow(trace_lengths)) {
 }
 g
 ```
-

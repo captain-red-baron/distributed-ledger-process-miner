@@ -8,8 +8,10 @@ def parse_event_log(raw_transactions: pd.DataFrame, transaction_lookup: pd.DataF
     Parses an event log from a raw transactions dataFrame.
     :param raw_transactions: the raw transactions to parse from. Should include at least the following columns:
     'id', 'action.from', 'action.input', 'action.to', 'blockNumber', 'transactionHash', 'type'
-    :param contracts_lookup: a lookup table with all contract addresses saved. Has the following columns
-    'blockNumber', 'result.address', 'isERC20', 'timestamp'.
+    :param transaction_lookup: a lookup table with all transaction hashes mapped to integers. Columns:
+    'transaction_hash', 'id'.
+    :param addresses_lookup: a lookup table with all addresses and information if the address is a
+    contract. Columns: 'address_hex', 'isContract', 'isERC20', 'id'
     :param block_times: a lookup table to map the block numbers to their times for time series analysis.
     :param block_padding: a kwarg to show the padding of the block. The single transaction segments in the outcome
     transaction log will have an unique id, ascending in time. The outcome is call 'total_pos' and is computed as
@@ -18,7 +20,6 @@ def parse_event_log(raw_transactions: pd.DataFrame, transaction_lookup: pd.DataF
     :return: events, trace complexities (by days)
     """
     addresses_lookup.set_index('address_hex')
-
     transaction_lookup.set_index('transaction_hash')
 
     # Events
