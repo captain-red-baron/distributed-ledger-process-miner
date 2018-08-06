@@ -2,6 +2,7 @@ import os
 import ntpath
 import glob
 import time
+from sys import argv
 
 import pandas as pd
 import numpy as np
@@ -18,12 +19,17 @@ logging.basicConfig(filename='process_miner_orchestration.log', level=logging.DE
 
 pd.options.mode.chained_assignment = None
 
+script, arg0, arg1, arg2, arg3 = argv
+
 #Paths
-path_to_raw_transaction_bulk = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_transactions'
-#path_contracts_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/contractsWithERCFlags.csv'
-path_transaction_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/transaction_lookup.csv'
-path_address_lookup = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/address_lookup.csv'
-path_block_times = '/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/blockTimes.csv'
+path_to_raw_transaction_bulk = arg0
+#'/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/parity_transactions'
+path_transaction_lookup = arg1
+#'/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/transaction_lookup.csv'
+path_address_lookup = arg2
+#'/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/address_lookup.csv'
+path_block_times = arg3
+#'/Users/marcelmuller/Documents/Uni/Master/Semester_9_SS_18/Masterarbeit/blockTimes.csv'
 
 extension = 'csv'
 
@@ -35,16 +41,16 @@ def check_data_fame_conformance(df, pattern):
         return False
 
 
-def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFrame):
+def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
     """
     Utility function to mine a DataFrame of parsed events aggregated by day.
     :param parsed_events: the input Data from the parser module.
     :param name: a unique name for the origin of the mined day (e.g. "trasactions5000000-5100000")
     :param suffix: a suffix to get added to any file name.
-    :return: two data frames. One for the global dependencies, one for the confidences. Columns: 'day', 'CtC->CtC',
+    :return: three data frames. One for the global dependencies, one for the confidences. Columns: 'day', 'CtC->CtC',
     'CtC->CtU', 'CtC->UtU', 'CtC->end', 'CtU->CtC', 'CtU->CtU','CtU->UtC', 'CtU->UtU', 'CtU->end', 'UtC->CtC',
     'UtC->CtU', 'UtC->UtC', 'UtC->UtU', 'UtC->end', 'UtU->CtC', 'UtU->CtU', 'UtU->UtC', 'UtU->UtU', 'UtU->end',
-    'sta->CtC', 'sta->UtC', 'sta->UtU'
+    'sta->CtC', 'sta->UtC', 'sta->UtU' and one for the case lengths.
     """
     global_dependencies_l = pd.DataFrame(columns=['day', 'CtC->CtC', 'CtC->CtU', 'CtC->UtU', 'CtC->end', 'CtU->CtC', 'CtU->CtU',
        'CtU->UtC', 'CtU->UtU', 'CtU->end', 'UtC->CtC', 'UtC->CtU', 'UtC->UtC',
@@ -56,8 +62,11 @@ def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFr
        'UtU->end', 'sta->CtC', 'sta->UtC', 'sta->UtU'])
     parsed_events['day'] = pd.to_datetime(parsed_events['timestamp'], unit='s').dt.normalize()
     groups = parsed_events.groupby('day')
+    global_case_amount_l = pd.DataFrame(columns={'day', 'cases'})
     for day, group in groups:
         start = time.time()
+        s = pd.Series([day, len(group['transaction_id'].unique())], index=['day', 'cases'])
+        global_case_amount_l = global_case_amount_l.append(s, ignore_index=True)
         transitions, transitions_agg = miner.compute_transitions(group)
         confidence = miner.compute_dependency_confidence(transitions_agg)
         transitions_agg['day'] = day
@@ -69,7 +78,7 @@ def mine_segment_by_day(parsed_events, name, suffix) -> (pd.DataFrame, pd.DataFr
         end = time.time()
         logging.info('Mined processes for {} in {}'.format(day, end-start))
         print('Mined processes for {} in {}'.format(day, end-start))
-    return global_dependencies_l, global_confidences_l
+    return global_dependencies_l, global_confidences_l, global_case_amount_l
 
 
 # Data Frames
@@ -100,6 +109,8 @@ global_confidences = pd.DataFrame(columns=['day', 'CtC->CtC', 'CtC->CtU', 'CtC->
        'CtU->UtC', 'CtU->UtU', 'CtU->end', 'UtC->CtC', 'UtC->CtU', 'UtC->UtC',
        'UtC->UtU', 'UtC->end', 'UtU->CtC', 'UtU->CtU', 'UtU->UtC', 'UtU->UtU',
        'UtU->end', 'sta->CtC', 'sta->UtC', 'sta->UtU'])
+
+global_case_amount = pd.DataFrame(columns={'day', 'cases'})
 
 global_trace_lengths_columns = ['day'] + [i for i in range(0, 10000)]
 global_trace_lengths = pd.DataFrame(columns=global_trace_lengths_columns)
@@ -143,14 +154,16 @@ for candidate_path in raw_transaction_candidates:
         print('Starting now mining operation for {}'.format(file_infix))
         events['day'] = pd.to_datetime(events['timestamp'], unit='s').dt.normalize()
 
-        dep, con = mine_segment_by_day(events, file_infix, j)
+        dep, con, cases = mine_segment_by_day(events, file_infix, j)
         global_dependencies = global_dependencies.append(dep)
         global_confidences = global_confidences.append(con)
+        global_case_amount = global_case_amount.append(cases)
 
         global_dependencies = global_dependencies.fillna(0)
         global_dependencies['total_events'] = global_dependencies.sum(axis=1)
 
         reduced_global_dependencies = global_dependencies.groupby('day').sum()
+        reduced_global_case_amount = global_case_amount.groupby('day').sum()
 
         min_day = reduced_global_dependencies.index.min()
         max_day = reduced_global_dependencies.index.max()
@@ -159,5 +172,8 @@ for candidate_path in raw_transaction_candidates:
 
         rgtl_filename = 'rgtl_{}_to_{}.csv'.format(str(min_day)[0:10], str(max_day)[0:10])
         reduced_global_trace_lengths.to_csv(rgtl_filename)
+
+        rgca_filename = 'rgca_{}_to_{}.csv'.format(str(min_day)[0:10], str(max_day)[0:10])
+        reduced_global_case_amount.to_csv(rgca_filename)
         j += 1
 
