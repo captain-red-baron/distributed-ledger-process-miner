@@ -26,7 +26,10 @@ aggregated_data$total_events <- rowSums(aggregated_data[2:24])
 First we want to analyze how many cases took place. Note that this bar plot includes the start and end events for every case.
 
 ```{r}
-transition_day <- ggplot(aggregated_data, aes(x=day, y=total_events)) + ylab('amount of transitions') + ggtitle('Occured transitions per day') + theme(plot.title = element_text(hjust = 0.5)) + geom_bar(stat='identity')
+pdf("transition_amount_by_day_micro.pdf", width=12, height=6)
+transition_day <- ggplot(aggregated_data, aes(x=day, y=total_events)) + ylab('amount of transitions') + theme(plot.title = element_text(hjust = 0.5)) + geom_bar(stat='identity')
+print(transition_day)
+dev.off()
 transition_day
 ```
 
@@ -45,16 +48,21 @@ ggplot(aggregated_data.m, aes(x = day, y = value, fill=variable)) +
 This is with relative values
 
 ```{r}
+pdf("transition_stacked_by_day_micro.pdf", width=12, height=6)
 aggregated_data_relative <- cbind(aggregated_data)
 aggregated_data_relative[, 2:24] = aggregated_data[, 2:24] /  aggregated_data[, 'total_events']
 aggregated_data_relative.m <- melt(aggregated_data_relative[, 1:24], id.vars = "day")
 p <- ggplot(aggregated_data_relative.m, aes(x = day, y = value, fill=variable)) +
     geom_bar(stat='identity')
+print(p)
+dev.off()
 p
 ```
 
 ```{r}
-summary(aggregated_data_relative)
+sink("transitions_summary.txt")
+print(summary(aggregated_data_relative))
+sink()
 ```
 ```{r}
 cleaned_aggregated_data_relative <- subset(aggregated_data_relative, select = -c(CtU..UtC, CtU..UtU, UtC..UtU, UtU..CtC, UtU..CtU, UtU..UtC, UtU..UtU))
@@ -67,5 +75,19 @@ cormat <- round(cor(cleaned_aggregated_data_relative[, 2:17], method = c("pearso
 melted_cormat <- melt(cormat)
 ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
   geom_tile() + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r}
+install.packages("corrplot")
+
+library(corrplot)
+```
+
+
+```{r}
+M <- round(cor(cleaned_aggregated_data_relative[, 2:17], method = c("pearson")),2)
+png(height=1200, width=1500, pointsize=15, file="corrgram_micro.png")
+corrplot(M, method="color", type="lower", order="hclust", addCoef.col = "black", tl.col="black", tl.srt=45)
+dev.off()
 ```
 

@@ -9,7 +9,10 @@ from config.constants import RAW_TRANSACTION_COLUMN_NAMES, \
     BLOCK_TIMES_COLUMN_NAMES
 
 import logging
-logging.basicConfig(filename='address_shortner.log', level=logging.DEBUG)
+logging.basicConfig(filename='address_shortner.log',
+                    format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    level=logging.DEBUG)
 
 
 def check_data_fame_conformance(df, pattern):
@@ -49,7 +52,7 @@ address_set = set()
 transaction_hashes_set = set()
 
 for filename in glob.iglob('{}/**/*.csv'.format(path_to_raw_transaction_bulk), recursive=True):
-    raw_transactions = pd.read_csv(filename)
+    raw_transactions = pd.read_csv(filename, index_col=0)
     if not check_data_fame_conformance(raw_transactions, RAW_TRANSACTION_COLUMN_NAMES):
         logging.info('{} - File {} not matching the raw transaction pattern. Skipping now'.format(datetime.datetime.now(), filename))
         print('{} - File {} not matching the raw transaction pattern. Skipping now'.format(datetime.datetime.now(), filename))
@@ -78,7 +81,7 @@ addresses_df = addresses_df.dropna()
 # Get the contract lookup and set is Contract flag
 contracts_lookup['isContract'] = True
 contracts_lookup['address_hex'] = contracts_lookup['result.address']
-contracts_lookup = contracts_lookup[['address_hex', 'isContract', 'isERC20']]
+contracts_lookup = contracts_lookup[['address_hex', 'isContract']]
 addresses_lookup = pd.merge(addresses_df, contracts_lookup, left_on='address_hex',
                             right_on='address_hex', how='outer')
 addresses_lookup['id'] = addresses_lookup.index

@@ -1,10 +1,6 @@
-RAW_TRANSACTION_COLUMN_NAMES = {'action.address', 'action.balance', 'action.callType', 'action.from',
-       'action.gas', 'action.init', 'action.input', 'action.refundAddress',
-       'action.to', 'action.value', 'blockHash', 'blockNumber', 'error',
-       'result', 'result.address', 'result.code', 'result.gasUsed',
-       'result.output', 'subtraces', 'traceAddress', 'transactionHash',
-       'transactionPosition', 'type'}
-CONTRACT_LOOKUP_COLUMN_NAMES = {'result.address', 'isERC20'}
+RAW_TRANSACTION_COLUMN_NAMES = {'action.from', 'action.to', 'blockNumber', 'error',
+       'result', 'subtraces', 'traceAddress', 'transactionHash', 'transactionPosition', 'type'}
+CONTRACT_LOOKUP_COLUMN_NAMES = {'result.address'}
 BLOCK_TIMES_COLUMN_NAMES = {'number', 'timestamp'}
 TRANSACTION_LOOKUP_COLUMN_NAMES = {'transaction_hash', 'id'}
-ADDRESSES_LOOKUP_COLUMN_NAMES = {'address_hex', 'isContract', 'isERC20', 'id'}
+ADDRESSES_LOOKUP_COLUMN_NAMES = {'address_hex', 'isContract', 'id'}

@@ -122,3 +122,29 @@ def merge_transition(trans, nxt):
         return trans
     else:
         return nxt
+
+
+def compute_dependency_graph(transitions: pd.Series, dep: pd.Series, relative_cutoff: float, significance_cutoff: float) -> nx.DiGraph:
+    total_transitions = transitions.sum()
+    transitions_relative = transitions / total_transitions
+
+    g = nx.DiGraph()
+    node_set = set()
+    for i, v in transitions.items():
+        current_transition = i
+        act_a = current_transition[:3]
+        act_b = current_transition[-3:]
+        node_set.add(act_a)
+        node_set.add(act_b)
+    for act in node_set:
+        g.add_node(act)
+    for i, v in transitions.items():
+        current_transition = i
+        act_a = current_transition[:3]
+        act_b = current_transition[-3:]
+        if transitions_relative[current_transition] > relative_cutoff and dep[current_transition] > significance_cutoff:
+            g.add_edge(act_a, act_b)
+            g[act_a][act_b]['relative'] = round(transitions_relative[current_transition], 4)
+            g[act_a][act_b]['significance'] = round(dep[current_transition], 2)
+            g[act_a][act_b]['label'] = '{}% ({})'.format(round(transitions_relative[current_transition] * 100, 2), round(dep[current_transition], 2))
+    return g

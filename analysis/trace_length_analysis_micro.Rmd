@@ -11,6 +11,24 @@ options(scipen = 999)
 ```
 
 ```{r}
+cases_df <- read.csv(file="../../parity_transactions/rgca_1523059200_to_1524528000.csv", header=TRUE, sep=",")
+cases_df <- cases_df[3:16, ]
+
+#cases$day <- cases$day / 1000000000
+cases_df$day <- as.POSIXct(cases$day, origin="1970-01-01")
+```
+
+```{r}
+pdf("case_amount_by_day_micro.pdf", width=12, height=6)
+f <- ggplot(data=cases_df, aes(x=day, y=cases)) + xlab('day') + ylab('amount of cases') + geom_bar(stat = 'identity')
+print(f)
+dev.off()
+f
+```
+
+
+
+```{r}
 trace_lengths <- read.csv(file="../../parity_transactions/rgtl_1523059200_to_1524528000.csv", header=TRUE, sep=",")
 trace_lengths <- trace_lengths[3:16, ]
 
@@ -21,7 +39,9 @@ colnames(trace_lengths)[1] <- "day"
 ```
 
 
+
 ```{r}
+pdf("trace_length_1000_micro.pdf", width=12, height=6)
 g <- ggplot() + xlab('trace length') + ylab('occurences') + scale_y_log10() + scale_x_discrete(breaks=seq(0, 1000, by=100)) + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -32,20 +52,26 @@ for (row in 1:nrow(trace_lengths)) {
   trace_lengths_cur.m <- melt(trace_lengths[row, 1:999], id.vars = "day")
   g <- g + geom_bar(data=trace_lengths_cur.m, stat='identity', mapping=aes(x=variable, y=value), alpha=alp) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 }
+print(g)
+dev.off()
 g
 ```
 
 ```{r}
+pdf("trace_length_10_micro.pdf", width=12, height=6)
 g <- ggplot() + xlab('trace length') + ylab('occurences') + scale_y_log10() + theme_minimal()
 alp = 1/nrow(trace_lengths)
 for (row in 1:nrow(trace_lengths)) {
   trace_lengths_cur.m <- melt(trace_lengths[row, 1:12], id.vars = "day")
   g <- g + geom_bar(data=trace_lengths_cur.m, stat='identity', mapping=aes(x=variable, y=value), alpha=alp) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 }
+print(g)
+dev.off()
 g
 ```
 
 ```{r}
+pdf("trace_length_100_micro.pdf", width=12, height=6)
 g <- ggplot() + xlab('trace length') + ylab('occurences') + scale_y_log10() + scale_x_discrete(breaks=seq(0, 100, by=10)) + theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -56,5 +82,7 @@ for (row in 1:nrow(trace_lengths)) {
   trace_lengths_cur.m <- melt(trace_lengths[row, 1:100], id.vars = "day")
   g <- g + geom_bar(data=trace_lengths_cur.m, stat='identity', mapping=aes(x=variable, y=value), alpha=alp) + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 }
+print(g)
+dev.off()
 g
 ```
